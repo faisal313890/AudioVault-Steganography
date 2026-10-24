@@ -1,59 +1,148 @@
-# AudioVault — Digital Forensics GUI Lab Project
+# AudioVault — Audio & Text Image Steganography
 
-Standalone Python application to hide **WAV/MP3 audio** or **UTF-8 text** inside a lossless PNG image, and recover the exact contents.
+**An educational Python desktop application for hiding password-encrypted audio or text in PNG images, then recovering and verifying the original data.**
 
-## Windows CMD quick start
+`Python 3.12+` · `CustomTkinter` · `Pillow` · `AES-256-GCM` · `Scrypt` · `SHA-256` · `RGB LSB Steganography`
 
-Work in the folder that contains `main.py` (for example `D:\Desktop\my\dfl\lab project\1st`).
+> **Digital Forensics / Cybersecurity Lab Project** — Developed to demonstrate steganography, authenticated encryption, evidence integrity, file handling, and GUI-based testing. Use with files you own or are authorized to examine.
+
+![AudioVault desktop interface](docs/screenshots/02-audio-prepared.png)
+
+## Features
+
+| Capability | Details |
+|---|---|
+| Hide audio | Embed a `.wav` or `.mp3` file inside a cover PNG, BMP, or JPEG image |
+| Hide text | Enter a UTF-8 message or import a `.txt` file |
+| Extract content | Automatically determine whether decrypted payload is audio or text |
+| Password protection | Scrypt-derived 256-bit key and authenticated AES-256-GCM encryption |
+| Data integrity | Verify the SHA-256 digest of the recovered bytes before saving |
+| Capacity guardrails | Estimate payload size and reject images that cannot fit it |
+| Quality feedback | Display PSNR to quantify cover-versus-stego image distortion |
+| Data safety | Avoid overwriting original sources or existing extracted files |
+| Desktop UI | Dark-themed CustomTkinter tabs with persistent action button |
+
+## Quick start (Windows CMD)
+
+Requirements: **Python 3.12 or later** and a standard Windows desktop environment.
 
 ```cmd
+python -m venv venv
 venv\Scripts\activate
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 python make_demo_files.py
-python -m unittest discover -s tests -v
 python main.py
 ```
 
-If no virtual environment exists, run `python -m venv venv` before activating.
+The sample generator creates a synthetic audio tone, a test image, and a sample text file in `samples/`. Sample audio is not a human voice recording. You may instead select your own authorized WAV/MP3 file.
 
-## Using the GUI
+### Using the application
 
-**Hide Audio**: choose cover image (PNG/BMP/JPEG), WAV or MP3 file, password. The fixed button at the bottom says **Encrypt & Hide Audio**. Save a *new* `.png` image.
+**Hide Audio**: Choose a cover image and WAV/MP3 file, enter a password, click **Encrypt & Hide Audio**, then save the generated `.png` file.
 
-**Hide Text**: choose cover image, type a secret message or use **Import .txt**, and set a password. The fixed bottom button changes to **Encrypt & Hide Text**. Save a *new* `.png` image.
+**Hide Text**: Choose a cover image, type a message or import `.txt`, enter a password, click **Encrypt & Hide Text**, and save the resulting `.png` file.
 
-**Extract**: choose the generated PNG, enter the exact password, and choose an output folder. The fixed button says **Extract & Verify Hidden Data**. Audio is restored as WAV/MP3; text is saved as `hidden_message.txt` and displayed in the app. SHA-256 is checked before files are saved.
+**Extract**: Select an AudioVault stego PNG, enter the same password, click **Extract & Verify Hidden Data**, and choose a new output folder. Audio is restored as WAV/MP3; text appears in the GUI and is saved to `hidden_message.txt`. The tool checks SHA-256 before writing recovered files.
 
-**Important**: select a fresh output filename and a folder that does not already contain an extracted file of the same name. No source or existing output is overwritten.
+> **Keep the output as PNG.** Cropping, resizing, pixel editing, or JPEG recompression can destroy the embedded data. Use long, unique passwords; short passwords are vulnerable to guessing.
 
-## Details for your viva
+## Screenshots — demonstrated workflows
 
-1. **Steganography vs encryption** — LSB embedding conceals data within the cover image, while AES-256-GCM protects content confidentiality/integrity. Encryption alone does not hide that data exists.
-2. **LSB** — replace only the least-significant bit in each R/G/B channel of the image pixel data. The image's alpha channel is not modified.
-3. **Capacity** — an RGB image with width W and height H can hold `floor(3*W*H/8)` bytes of raw embedded bits, minus header and encryption overhead.
-4. **Scrypt** — derives the AES key from the entered password with a random 16-byte salt. Salt is stored openly in the payload.
-5. **AES-256-GCM** — protects the encrypted data using a random 12-byte nonce and a 16-byte authentication tag. Incorrect passwords or corrupted payloads are rejected.
-6. **SHA-256** — the plaintext audio/text SHA-256 is computed and stored *inside the encrypted payload*. The extracted content is checked against it.
-7. **PNG** — output must stay PNG. Re-saving, resizing, cropping or compressing as JPEG can destroy hidden LSBs.
-8. **PSNR** — Peak Signal-to-Noise Ratio measures pixel differences between the converted cover image and the stego image; higher usually indicates less visible distortion. Calculated for RGB channels during embedding.
-9. **Digital forensic handling** — use authorized test images/files. Keep originals and working copies separate and document the hashes/paths.
+### Audio hiding and recovery
 
-## Implementation notes
+| Input and capacity check | Encryption + hiding completed | Extraction + SHA-256 verification |
+|:---:|:---:|:---:|
+| ![Audio selected with cover and capacity check](docs/screenshots/02-audio-prepared.png) | ![Audio saved in a stego image](docs/screenshots/03-audio-hidden-success.png) | ![Original MP3 restored and hash verified](docs/screenshots/04-audio-extracted-verified.png) |
 
-- The entire metadata (including the filename), audio or text content and SHA-256 are encrypted. A public image header contains a magic version and encrypted payload length.
-- Input audio files are treated as bytes: WAV and MP3 are not transcoded.
-- **This format is AudioVault v2** and is not byte-compatible with `AVLT01` images from the earlier tutorial. Regenerate older image outputs using the new app.
-- The tool provides **basic sequential spatial LSB steganography**. This is not designed to defeat modern steganalysis. The password may be susceptible to offline guessing if weak; use a long unique password.
-- For simplicity, image embedding and extraction operate in memory. Very large audio or cover images may require significant RAM.
-- All generated demos are synthetic and safe. `demo_voice.wav` is a computer-generated tone, not human speech.
+### Text hiding and recovery
 
-## Project contents
+| Text input and capacity check | Encryption + hiding completed | Extraction + SHA-256 verification |
+|:---:|:---:|:---:|
+| ![Text message selected for hiding](docs/screenshots/05-text-prepared.png) | ![Text saved in a stego image](docs/screenshots/06-text-hidden-success.png) | ![Recovered text and SHA-256 confirmation](docs/screenshots/07-text-extracted-verified.png) |
 
-- `main.py`: CustomTkinter desktop GUI with always-visible action button
-- `steganography.py`: LSB image transport, file/text packing and verification
-- `security.py`: Scrypt, AES-256-GCM, SHA-256
-- `make_demo_files.py`: create a cover PNG, test WAV tone, and text document
-- `tests/test_steganography.py`: automated core functionality regression tests
-- `requirements.txt`: Python dependencies
+[See the complete screenshot index and captions](docs/TESTING.md#screenshot-evidence).
 
-Suggested screenshots for your lab report: three main tabs, selected cover + capacity, successful hide result, successful text extraction, successfully restored audio with SHA-256, wrong-password rejection, and test run output.
+## Results from the captured Windows GUI tests
+
+These measurements come from the **user-provided demonstration screenshots**, not from a benchmark of all possible file sizes or images.
+
+| Experiment | Payload used | Available capacity | PSNR (dB) | Demonstrated outcome |
+|---|---:|---:|---:|---|
+| MP3 hidden in PNG | 8,121 bytes | 8,255 bytes | 51.17 | Extracted MP3; SHA-256 **VERIFIED** |
+| Text hidden in PNG | 227 bytes | 8,255 bytes | 66.42 | Extracted message; SHA-256 **VERIFIED** |
+
+Both demonstrations show matching digests in the hide and extract success dialogs. The reported capacity and payload size are specific to these examples. This does not establish resistance to steganalysis or guarantee that every audio file can fit in every image.
+
+## Automated tests
+
+```cmd
+python -m unittest discover -s tests -v
+```
+
+The current suite contains **10 passing tests**, including WAV and MP3 byte-for-byte round trips, Unicode text round trips, wrong-password and corrupt-payload handling, capacity, alpha-channel preservation, JPEG cover conversion, and overwrite protection. See [Testing and evidence](docs/TESTING.md) for the full checklist and distinction between automated tests and GUI demonstrations.
+
+## How it works
+
+```text
+COVER IMAGE (PNG/JPG/BMP)       SECRET DATA (WAV/MP3/TEXT)
+           \                         /
+            \                       /
+              Validate input / capacity
+                        |
+             SHA-256 + metadata
+                        |
+              Scrypt(password, salt)
+                        |
+              AES-256-GCM encrypt
+                        |
+          Embed bytes using sequential
+               RGB-channel LSBs
+                        |
+                  STEGO PNG
+                        |
+              Read RGB LSB stream
+                        |
+              AES-GCM authenticate
+                        |
+                SHA-256 verify
+                        |
+            Original audio or text
+```
+
+The format is **AudioVault v2** (`AVLT02`). It is not compatible with older tutorial output (`AVLT01`). WAV/MP3 files are stored as original binary bytes; they are not transcoded. See [Architecture and security](docs/ARCHITECTURE.md).
+
+## Project layout
+
+```text
+AudioVault-Steganography/
+├── main.py                     # CustomTkinter desktop interface
+├── steganography.py            # LSB encoding, decoding, capacity, PSNR
+├── security.py                 # Scrypt, AES-GCM, SHA-256
+├── make_demo_files.py          # Synthetic demonstration assets
+├── requirements.txt
+├── tests/
+│   └── test_steganography.py   # Automated tests
+├── samples/                    # Non-sensitive demonstration files
+└── docs/
+    ├── ARCHITECTURE.md
+    ├── TESTING.md
+    └── screenshots/
+```
+
+## Security limitations
+
+- **Steganography is not undetectability.** This uses sequential spatial LSBs. Statistical analysis or comparison with the original image may reveal modifications.
+- Encryption protects the payload's confidentiality and authenticity, but a **weak password may be attacked offline** if someone obtains the stego image.
+- Lossy image processing, cropping, color conversion, and other edits can damage embedded data.
+- Content size is limited by the image's pixel capacity. Processing very large files/images may consume significant RAM.
+- SHA-256 confirms recovered content matches the original digest stored within the encrypted package; it does **not** establish evidence provenance or replace a chain-of-custody record.
+- This is an educational tool and has **not** undergone a professional security audit.
+
+## Inspiration and learning resources
+
+- [OpenStego](https://github.com/syvaidya/openstego) — reference for the general steganography GUI workflow; AudioVault implements its own audio/text hiding workflow.
+- [Pillow](https://pillow.readthedocs.io/) — image handling.
+- [CustomTkinter](https://customtkinter.tomschimansky.com/) — graphical interface.
+- [cryptography](https://cryptography.io/en/latest/) — authenticated encryption and key derivation primitives.
+
+**Project category:** Digital Forensics · Cybersecurity · Python Desktop Application
