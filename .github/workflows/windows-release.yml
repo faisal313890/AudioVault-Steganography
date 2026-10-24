@@ -1,0 +1,92 @@
+name: Windows executable release
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: read
+
+jobs:
+  windows-build:
+    name: Build AudioVault for Windows x64
+    runs-on: windows-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up 64-bit Python 3.12
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+          architecture: 'x64'
+          cache: pip
+
+      - name: Install application and packaging dependencies
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          python -m pip install 'pyinstaller>=6.10,<7'
+
+      - name: Run automated tests
+        shell: pwsh
+        run: python -m unittest discover -s tests -v
+
+      - name: Build application (one-folder, Windows GUI)
+        shell: pwsh
+        run: |
+          python -m PyInstaller --noconfirm --clean --onedir --windowed --name AudioVault --collect-all customtkinter main.py
+          if (-not (Test-Path -LiteralPath 'dist/AudioVault/AudioVault.exe')) {
+            throw 'Executable not created'
+          }
+
+      - name: Create distributable ZIP and SHA-256 manifest
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $zipName = 'AudioVault-Windows-x64.zip'
+          Compress-Archive -LiteralPath 'dist/AudioVault' -DestinationPath $zipName -Force
+          $sha = (Get-FileHash -LiteralPath $zipName -Algorithm SHA256).Hash.ToLowerInvariant()
+          Set-Content -Path "$zipName.sha256" -Value "$sha  $zipName" -Encoding ascii
+          Write-Host "Windows archive: $zipName"
+          Write-Host "SHA-256: $sha"
+
+      - name: Upload build artifact for verification
+        uses: actions/upload-artifact@v7
+        with:
+          name: AudioVault-Windows-x64
+          path: |
+            AudioVault-Windows-x64.zip
+            AudioVault-Windows-x64.zip.sha256
+          if-no-files-found: error
+          retention-days: 14
+
+  publish-release:
+    name: Publish tagged Windows release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: windows-build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download tested Windows package
+        uses: actions/download-artifact@v8
+        with:
+          name: AudioVault-Windows-x64
+
+      - name: Create private-repository GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          name: AudioVault ${{ github.ref_name }} - Windows x64
+          generate_release_notes: true
+          draft: false
+          fail_on_unmatched_files: true
+          files: |
+            AudioVault-Windows-x64.zip
+            AudioVault-Windows-x64.zip.sha256

@@ -22,6 +22,12 @@
 | Data safety | Avoid overwriting original sources or existing extracted files |
 | Desktop UI | Dark-themed CustomTkinter tabs with persistent action button |
 
+## Download the Windows application (no Python required)
+
+Go to the [AudioVault Releases page](https://github.com/faisal313890/AudioVault-Steganography/releases) and download **`AudioVault-Windows-x64.zip`** from the latest release. Extract it, then launch **`AudioVault/AudioVault.exe`**, keeping the `_internal` support folder beside the `.exe`.
+
+Windows builds are created automatically by a GitHub Actions workflow after a version tag is pushed, and include a SHA-256 checksum file. The app is not code-signed. See the [Windows release guide](docs/WINDOWS_RELEASE.md) for requirements, checksum verification, security notes, and how to build from source. The private repository and its releases are visible only to people with access.
+
 ## Quick start (Windows CMD)
 
 Requirements: **Python 3.12 or later** and a standard Windows desktop environment.
@@ -120,11 +126,15 @@ AudioVault-Steganography/
 ├── security.py                 # Scrypt, AES-GCM, SHA-256
 ├── make_demo_files.py          # Synthetic demonstration assets
 ├── requirements.txt
+├── build_windows.bat            # Build a Windows exe + ZIP locally
+├── .github/workflows/
+│   └── windows-release.yml      # Automated Windows binary release
 ├── tests/
 │   └── test_steganography.py   # Automated tests
 ├── samples/                    # Non-sensitive demonstration files
 └── docs/
     ├── ARCHITECTURE.md
+    ├── WINDOWS_RELEASE.md
     ├── TESTING.md
     └── screenshots/
 ```

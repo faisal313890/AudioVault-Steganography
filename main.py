@@ -6,6 +6,7 @@ import queue
 import threading
 import tkinter as tk
 from pathlib import Path
+import sys
 from tkinter import filedialog, messagebox
 
 import customtkinter as ctk
@@ -16,8 +17,14 @@ from steganography import (
 )
 
 BASE_DIR = Path(__file__).resolve().parent
-OUTPUT_DIR = BASE_DIR / "output"
-OUTPUT_DIR.mkdir(exist_ok=True)
+# Frozen (PyInstaller) builds must NOT save into their bundled installation folder.
+# That folder may be read-only and can be relocated or replaced on upgrade.
+OUTPUT_DIR = (
+    Path.home() / "AudioVault" / "output"
+    if getattr(sys, "frozen", False)
+    else BASE_DIR / "output"
+)
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
