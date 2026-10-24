@@ -31,3 +31,7 @@ desktop.ini
 build/
 dist/
 *.spec
+# Windows release archives
+AudioVault-Windows-x64.zip
+AudioVault-Windows-x64.zip.sha256
+RELEASE_SETUP_INSTRUCTIONS.txt
