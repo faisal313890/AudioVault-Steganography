@@ -1,0 +1,33 @@
+# Python virtual environment
+venv/
+.venv/
+
+# Python generated files
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+
+# Private configurations and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Generated application output
+output/*
+!output/.gitkeep
+
+# Logs and temporary files
+*.log
+*.tmp
+
+# Windows files
+Thumbs.db
+desktop.ini
+
+# Build and distribution files
+build/
+dist/
+*.spec
